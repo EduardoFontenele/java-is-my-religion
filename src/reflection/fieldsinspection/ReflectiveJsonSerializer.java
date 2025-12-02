@@ -51,10 +51,10 @@ public class ReflectiveJsonSerializer {
             var fieldType = field.getType();
             sb.append("\"").append(field.getName()).append("\"").append(": ");
 
-            if(isStringOrEnum(fieldType)) {
-                sb.append("\"").append(field.get(object)).append("\"");
-            } else if (fieldType.isPrimitive()) {
+            if(fieldType.isPrimitive()) {
                 sb.append(field.get(object));
+            } else if(isStringOrEnum(fieldType)) {
+                sb.append("\"").append(field.get(object)).append("\"");
             } else if (fieldType.isArray()) {
                 var array = field.get(object);
                 var elementsType = array.getClass().getSimpleName();
@@ -81,6 +81,7 @@ public class ReflectiveJsonSerializer {
                 var list = (List<?>) field.get(object);
                 appendListTypeJsonNode(sb, list, list.size(), tabs);
             } else if(fieldType == Map.class) {
+                var map = (Map<?,?>) field.get(object);
 
             } else {
                 sb.append(serialize(field.getType(), field.get(object), tabs + 1));
@@ -108,21 +109,21 @@ public class ReflectiveJsonSerializer {
 
         sb.append("[");
 
-        if(isStringOrEnum(elementType)) {
-            for(int j = 0; j < listSize; j++) {
-                if(j != listSize - 1) {
-                    sb.append("\"").append(list.get(j)).append("\", ");
-                    continue;
-                }
-                sb.append("\"").append(list.get(j)).append("\"");
-            }
-        } else if(isPrimitive(elementType)) {
+        if(isPrimitive(elementType)) {
             for(int j = 0; j < listSize; j++) {
                 if(j != listSize - 1) {
                     sb.append(list.get(j)).append(", ");
                     continue;
                 }
                 sb.append(list.get(j));
+            }
+        } else if(isStringOrEnum(elementType)) {
+            for(int j = 0; j < listSize; j++) {
+                if(j != listSize - 1) {
+                    sb.append("\"").append(list.get(j)).append("\", ");
+                    continue;
+                }
+                sb.append("\"").append(list.get(j)).append("\"");
             }
         } else {
             sb.append("\n\t");
@@ -142,35 +143,21 @@ public class ReflectiveJsonSerializer {
         sb.append("]");
     }
 
-    private static boolean isStringOrEnum(Class<?> type) {
-        return type == String.class || type.isEnum();
-    }
-
-    private static boolean isPrimitive(Class<?> type) {
-        return type == Primitives.INTEGER.primitiveClass
-                || type == Long.class
-                || type == Integer.class
-                || type == Byte.class
-                || type == Boolean.class;
-    }
-
     private enum Primitives {
-        BYTE(byte.class, "byte[]", Byte.class),
-        SHORT(short.class, "short[]", Short.class),
-        INTEGER(int.class, "int[]", Integer.class),
-        LONG(long.class, "long[]", Long.class),
-        FLOAT(float.class, "float[]", Float.class),
-        DOUBLE(double.class, "double[]", Double.class),
-        BOOLEAN(boolean.class, "boolean[]", Boolean.class),
-        CHAR(char.class, "char[]", Character.class);
+        BYTE(byte.class, Byte.class),
+        SHORT(short.class, Short.class),
+        INTEGER(int.class, Integer.class),
+        LONG(long.class, Long.class),
+        FLOAT(float.class, Float.class),
+        DOUBLE(double.class, Double.class),
+        BOOLEAN(boolean.class, Boolean.class),
+        CHAR(char.class, Character.class);
 
         private final Class<?> primitiveClass;
-        private final String arrayName;
         private final Class<?> wrapperClass;
 
-        Primitives(Class<?> primitiveClass, String arrayName, Class<?> wrapperClass) {
+        Primitives(Class<?> primitiveClass, Class<?> wrapperClass) {
             this.primitiveClass = primitiveClass;
-            this.arrayName = arrayName;
             this.wrapperClass = wrapperClass;
         }
 
@@ -178,22 +165,22 @@ public class ReflectiveJsonSerializer {
             return this.primitiveClass;
         }
 
-        public String getArrayName() {
-            return this.arrayName;
-        }
-
         public Class<?> getWrapperClass() {
             return this.wrapperClass;
         }
 
-        public static boolean isPrimitive(Class<?> type) {
-            for (var p : values()) {
-                if (p.getPrimitiveClass().equals(type) || p.getWrapperClass().equals(type)) {
-                    return true;
-                }
-            }
+    }
 
-            return false;
+    private static boolean isStringOrEnum(Class<?> type) {
+        return type == String.class || type.isEnum();
+    }
+
+    private static boolean isPrimitive(Class<?> clazz) {
+        for (var type : Primitives.values()) {
+            if (type.getPrimitiveClass().equals(clazz) || type.getWrapperClass().equals(clazz)) {
+                return true;
+            }
         }
+        return false;
     }
 }
