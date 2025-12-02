@@ -1,6 +1,7 @@
 package reflection.fieldsinspection;
 
 import java.util.List;
+import java.util.Map;
 
 public record Employee(
         long id,
@@ -12,6 +13,7 @@ public record Employee(
         String[] partners,
         List<Job> jobs,
         int age,
-        int[] hashing
+        int[] hashing,
+        Map<String, Boolean> lovedOnes
 ) {
 }

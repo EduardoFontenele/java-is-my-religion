@@ -16,7 +16,14 @@ public class ReflectiveJsonSerializer {
                 new String[]{"Jason Voorhees", "Michael Myers", "Ezio Auditore da Firenze", "Noob Saibot"},
                 List.of(new Job(1L, "Implement DB"), new Job(2L, "Create queries")),
                 24,
-                new int[]{1, 3, 5}
+                new int[]{1, 3, 5},
+                Map.of("Duda", true,
+                        "Mia", true,
+                        "Camilly", true,
+                        "Monique", false,
+                        "Michelli", false,
+                        "Juliana", true,
+                        "Ana Carolina Elattar", true)
         );
 
         System.out.println(writeValueAsJson(Employee.class, e1));
@@ -34,8 +41,6 @@ public class ReflectiveJsonSerializer {
         return serialize(clazz, object, 1);
     }
 
-    // TODO: 1 - Implement arrays reflection
-    // TODO: 2 - Implements reflection for maps
     private static String serialize(Class<?> clazz, Object object, int tabs) throws IllegalAccessException {
         var sb = new StringBuilder();
         var fields = clazz.getDeclaredFields();
@@ -59,6 +64,7 @@ public class ReflectiveJsonSerializer {
                 var array = field.get(object);
                 var elementsType = array.getClass().getSimpleName();
 
+                // TODO: implement all array types
                 switch (elementsType) {
                     case "int[]" -> {
                         var intArray = (int[]) array;
@@ -83,6 +89,26 @@ public class ReflectiveJsonSerializer {
             } else if(fieldType == Map.class) {
                 var map = (Map<?,?>) field.get(object);
 
+                if(map.isEmpty()) {
+                    sb.append("{}");
+                }
+
+                sb.append("{\n");
+
+                var iterator = map.entrySet().iterator();
+
+                // TODO: contemplate all key-values types possibilites
+                while(iterator.hasNext()) {
+                    var entry = iterator.next();
+                    sb.append("\t".repeat(tabs + 1));
+                    sb.append("\"").append(entry.getKey().toString()).append("\": ").append(entry.getValue());
+                    if(iterator.hasNext()) {
+                       sb.append(",");
+                    }
+                    sb.append("\n");
+
+                }
+                sb.append("\t".repeat(tabs)).append("}");
             } else {
                 sb.append(serialize(field.getType(), field.get(object), tabs + 1));
             }
